@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FastChat</string>
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="username">Username</string>
+    <string name="send">Send</string>
+    <string name="type_message">Type a message…</string>
+    <string name="search_users">Search users…</string>
+    <string name="online">Online</string>
+    <string name="offline">Offline</string>
+    <string name="typing">typing…</string>
+    <string name="last_seen">Last seen %s</string>
+</resources>
