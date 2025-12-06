@@ -97,11 +97,14 @@ fun VoiceRecorderButton(
     } else {
         IconButton(
             onClick = {
-                if (audioPermissionState.status.isGranted) {
-                    audioRecorder.startRecording()
-                    isRecording = true
-                } else {
-                    audioPermissionState.launchPermissionRequest()
+                when {
+                    audioPermissionState.status == com.google.accompanist.permissions.PermissionStatus.Granted -> {
+                        audioRecorder.startRecording()
+                        isRecording = true
+                    }
+                    else -> {
+                        audioPermissionState.launchPermissionRequest()
+                    }
                 }
             }
         ) {
