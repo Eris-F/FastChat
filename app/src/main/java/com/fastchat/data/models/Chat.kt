@@ -9,7 +9,8 @@ data class Chat(
     val lastMessageTimestamp: Long = System.currentTimeMillis(),
     val lastMessageSenderId: String = "",
     val unreadCount: Map<String, Int> = emptyMap(),
-    val isTyping: Map<String, Boolean> = emptyMap()
+    val isTyping: Map<String, Boolean> = emptyMap(),
+    val sharedKey: String = "" // Shared encryption key for this chat
 ) {
     fun toMap(): Map<String, Any?> {
         return mapOf(
@@ -21,7 +22,8 @@ data class Chat(
             "lastMessageTimestamp" to lastMessageTimestamp,
             "lastMessageSenderId" to lastMessageSenderId,
             "unreadCount" to unreadCount,
-            "isTyping" to isTyping
+            "isTyping" to isTyping,
+            "sharedKey" to sharedKey
         )
     }
 

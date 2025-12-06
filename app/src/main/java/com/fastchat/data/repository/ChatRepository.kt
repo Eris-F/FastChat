@@ -80,6 +80,11 @@ class ChatRepository {
                 .toObject(User::class.java) ?: throw Exception("Other user not found")
 
             val chatId = UUID.randomUUID().toString()
+
+            // Generate shared encryption key for this chat
+            val sharedKey = EncryptionUtils.generateKey()
+            val sharedKeyString = EncryptionUtils.keyToString(sharedKey)
+
             val chat = Chat(
                 id = chatId,
                 participants = listOf(currentUserId, otherUserId),
@@ -92,7 +97,8 @@ class ChatRepository {
                     otherUserId to otherUser.photoUrl
                 ),
                 unreadCount = mapOf(currentUserId to 0, otherUserId to 0),
-                isTyping = mapOf(currentUserId to false, otherUserId to false)
+                isTyping = mapOf(currentUserId to false, otherUserId to false),
+                sharedKey = sharedKeyString
             )
 
             firestore.collection("chats").document(chatId).set(chat.toMap()).await()
@@ -108,11 +114,11 @@ class ChatRepository {
         senderName: String,
         content: String,
         type: MessageType,
-        recipientKey: String,
+        sharedKey: String,
         mediaUrl: String? = null
     ): Result<Unit> {
         return try {
-            val key = EncryptionUtils.stringToKey(recipientKey)
+            val key = EncryptionUtils.stringToKey(sharedKey)
             val encryptedContent = EncryptionUtils.encrypt(content, key)
 
             val messageId = UUID.randomUUID().toString()

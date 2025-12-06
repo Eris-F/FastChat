@@ -46,10 +46,10 @@ class ChatViewModel(
         }
     }
 
-    fun loadMessagesForChat(chatId: String, currentUserKey: String) {
+    fun loadMessagesForChat(chatId: String, sharedKey: String) {
         viewModelScope.launch {
             chatRepository.getMessagesForChat(chatId).collect { messageList ->
-                val key = EncryptionUtils.stringToKey(currentUserKey)
+                val key = EncryptionUtils.stringToKey(sharedKey)
                 _messages.value = messageList.map { message ->
                     try {
                         val decryptedContent = if (!message.deletedForEveryone && message.encryptedContent.isNotEmpty()) {
@@ -76,11 +76,11 @@ class ChatViewModel(
         senderId: String,
         senderName: String,
         content: String,
-        recipientKey: String,
+        sharedKey: String,
         type: MessageType = MessageType.TEXT
     ) {
         viewModelScope.launch {
-            chatRepository.sendMessage(chatId, senderId, senderName, content, type, recipientKey)
+            chatRepository.sendMessage(chatId, senderId, senderName, content, type, sharedKey)
         }
     }
 
@@ -89,17 +89,17 @@ class ChatViewModel(
         senderId: String,
         senderName: String,
         imageBytes: ByteArray,
-        recipientKey: String
+        sharedKey: String
     ) {
         viewModelScope.launch {
             _isLoading.value = true
-            val key = EncryptionUtils.stringToKey(recipientKey)
+            val key = EncryptionUtils.stringToKey(sharedKey)
             val uploadResult = storageRepository.uploadEncryptedImage(imageBytes, senderId, key)
 
             if (uploadResult.isSuccess) {
                 val mediaUrl = uploadResult.getOrNull()!!
                 chatRepository.sendMessage(
-                    chatId, senderId, senderName, "Image", MessageType.IMAGE, recipientKey, mediaUrl
+                    chatId, senderId, senderName, "Image", MessageType.IMAGE, sharedKey, mediaUrl
                 )
             }
             _isLoading.value = false
@@ -111,25 +111,25 @@ class ChatViewModel(
         senderId: String,
         senderName: String,
         audioBytes: ByteArray,
-        recipientKey: String
+        sharedKey: String
     ) {
         viewModelScope.launch {
             _isLoading.value = true
-            val key = EncryptionUtils.stringToKey(recipientKey)
+            val key = EncryptionUtils.stringToKey(sharedKey)
             val uploadResult = storageRepository.uploadEncryptedVoice(audioBytes, senderId, key)
 
             if (uploadResult.isSuccess) {
                 val mediaUrl = uploadResult.getOrNull()!!
                 chatRepository.sendMessage(
-                    chatId, senderId, senderName, "Voice message", MessageType.VOICE, recipientKey, mediaUrl
+                    chatId, senderId, senderName, "Voice message", MessageType.VOICE, sharedKey, mediaUrl
                 )
             }
             _isLoading.value = false
         }
     }
 
-    suspend fun downloadAndDecryptMedia(url: String, userKey: String): ByteArray? {
-        val key = EncryptionUtils.stringToKey(userKey)
+    suspend fun downloadAndDecryptMedia(url: String, sharedKey: String): ByteArray? {
+        val key = EncryptionUtils.stringToKey(sharedKey)
         val result = storageRepository.downloadAndDecryptMedia(url, key)
         return result.getOrNull()
     }

@@ -53,7 +53,7 @@ fun ChatScreen(
     var otherUserPhoto by remember { mutableStateOf<String?>(null) }
     var otherUserOnline by remember { mutableStateOf(false) }
     var otherUserLastSeen by remember { mutableStateOf(0L) }
-    var recipientKey by remember { mutableStateOf("") }
+    var chatSharedKey by remember { mutableStateOf("") }
     var showMenu by remember { mutableStateOf(false) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -67,14 +67,16 @@ fun ChatScreen(
                 bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, outputStream)
                 val imageBytes = outputStream.toByteArray()
 
-                currentUser?.let { user ->
-                    chatViewModel.sendImageMessage(
-                        chatId,
-                        user.uid,
-                        user.username,
-                        imageBytes,
-                        recipientKey
-                    )
+                if (chatSharedKey.isNotEmpty()) {
+                    currentUser?.let { user ->
+                        chatViewModel.sendImageMessage(
+                            chatId,
+                            user.uid,
+                            user.username,
+                            imageBytes,
+                            chatSharedKey
+                        )
+                    }
                 }
             }
         }
@@ -82,13 +84,16 @@ fun ChatScreen(
 
     LaunchedEffect(chatId, currentUser) {
         currentUser?.let { user ->
-            chatViewModel.loadMessagesForChat(chatId, user.encryptionKey)
-            chatViewModel.markMessagesAsRead(chatId, user.uid)
-
-            // Load chat details
+            // Load chat details first to get shared key
             val chat = chatViewModel.chats.value.find { it.id == chatId }
             chat?.let {
                 chatViewModel.setCurrentChat(it)
+                chatSharedKey = it.sharedKey
+
+                // Now load messages with the shared key
+                chatViewModel.loadMessagesForChat(chatId, it.sharedKey)
+                chatViewModel.markMessagesAsRead(chatId, user.uid)
+
                 val otherUserId = it.getOtherParticipantId(user.uid)
                 otherUserName = it.getOtherParticipantName(user.uid)
                 otherUserPhoto = it.getOtherParticipantPhoto(user.uid)
@@ -99,7 +104,6 @@ fun ChatScreen(
                     otherUser?.let { u ->
                         otherUserOnline = u.isOnline
                         otherUserLastSeen = u.lastSeen
-                        recipientKey = u.encryptionKey
                     }
                 }
             }
@@ -172,13 +176,19 @@ fun ChatScreen(
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
+                    IconButton(
+                        onClick = { imagePickerLauncher.launch("image/*") },
+                        enabled = chatSharedKey.isNotEmpty()
+                    ) {
                         Icon(Icons.Default.Image, contentDescription = "Send image")
                     }
 
-                    IconButton(onClick = {
-                        // TODO: Voice recording
-                    }) {
+                    IconButton(
+                        onClick = {
+                            // TODO: Voice recording
+                        },
+                        enabled = chatSharedKey.isNotEmpty()
+                    ) {
                         Icon(Icons.Default.Mic, contentDescription = "Voice message")
                     }
 
@@ -200,21 +210,21 @@ fun ChatScreen(
 
                     IconButton(
                         onClick = {
-                            if (messageText.isNotBlank()) {
+                            if (messageText.isNotBlank() && chatSharedKey.isNotEmpty()) {
                                 currentUser?.let { user ->
                                     chatViewModel.sendMessage(
                                         chatId,
                                         user.uid,
                                         user.username,
                                         messageText,
-                                        recipientKey
+                                        chatSharedKey
                                     )
                                     messageText = ""
                                     chatViewModel.setTypingStatus(chatId, user.uid, false)
                                 }
                             }
                         },
-                        enabled = messageText.isNotBlank()
+                        enabled = messageText.isNotBlank() && chatSharedKey.isNotEmpty()
                     ) {
                         Icon(
                             Icons.Default.Send,
@@ -249,7 +259,7 @@ fun ChatScreen(
                         onDownloadMedia = {
                             scope.launch {
                                 message.mediaUrl?.let { url ->
-                                    chatViewModel.downloadAndDecryptMedia(url, user.encryptionKey)
+                                    chatViewModel.downloadAndDecryptMedia(url, chatSharedKey)
                                 }
                             }
                         }
