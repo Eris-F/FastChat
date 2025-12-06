@@ -29,11 +29,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val DARK_MODE_KEY = booleanPreferencesKey("dark_mode")
-            val darkModeFlow = dataStore.data.map { preferences ->
-                preferences[DARK_MODE_KEY] ?: isSystemInDarkTheme()
-            }
-            val isDarkMode by darkModeFlow.collectAsState(initial = isSystemInDarkTheme())
+            val isDarkMode = isSystemInDarkTheme()
 
             FastChatTheme(darkTheme = isDarkMode) {
                 val navController = rememberNavController()

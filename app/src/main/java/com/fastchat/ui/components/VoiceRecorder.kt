@@ -30,7 +30,12 @@ fun VoiceRecorderButton(
     var isRecording by remember { mutableStateOf(false) }
     var recordingDuration by remember { mutableStateOf(0) }
 
-    val audioPermissionState = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
+    val audioPermissionState = rememberPermissionState(Manifest.permission.RECORD_AUDIO) { granted ->
+        if (granted) {
+            audioRecorder.startRecording()
+            isRecording = true
+        }
+    }
 
     LaunchedEffect(isRecording) {
         if (isRecording) {
@@ -92,7 +97,7 @@ fun VoiceRecorderButton(
     } else {
         IconButton(
             onClick = {
-                if (audioPermissionState.hasPermission) {
+                if (audioPermissionState.status.isGranted) {
                     audioRecorder.startRecording()
                     isRecording = true
                 } else {
